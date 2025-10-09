@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json()); 
 
 const upload = require("./config/cloudinary.config");
-app.post('/upload', upload.single('image'), (req, res) => {
+app.use('/upload', upload.single('image'), (req, res) => {
     res.json(req.file);
 });
 
