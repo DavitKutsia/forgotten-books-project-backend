@@ -1,15 +1,7 @@
 {
   "version": 2,
-  "builds": [
-      { 
-          "src": "main.js", 
-          "use": "@vercel/node" 
-      }
-  ],
-  "routes": [
-      { 
-          "src": "/(.*)", 
-          "dest": "/main.js" 
-      }
-  ]
+  "functions": {
+    "main.js": { "runtime": "nodejs18.x" }
+  },
+  "routes": [{ "src": "/(.*)", "dest": "/main.js" }]
 }
