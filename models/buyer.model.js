@@ -16,7 +16,7 @@ const buyerModel = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['buyer', 'seller'],
+        enum: ['buyer', 'seller', 'admin'],
         default: 'buyer'
     }
 }, {timestamps: true});
