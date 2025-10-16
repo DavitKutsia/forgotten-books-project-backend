@@ -6,6 +6,7 @@ const buyerSchema = require('../validations/buyer.schema');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const isAuth = require('../middlewares/isAuth.middleware');
+const passport = require('../config/google.strategy');
 require('dotenv').config();
 
 const authRouter = Router();
@@ -74,5 +75,53 @@ authRouter.get('/profile', isAuth, async (req, res) => {
 
     res.status(200).json({ user });
 });
+
+authRouter.get('/google', (req, res, next) => {
+    const role = req.query.role;
+    if (!role || !['buyer', 'seller'].includes(role)) {
+        return res.status(400).json({ message: 'role query param must be "buyer" or "seller"' });
+    }
+
+    req.session = req.session || {};
+    req.session.role = role;
+
+    passport.authenticate('google', { scope: ['profile', 'email'], state: role, prompt: 'select_account' })(req, res, next);
+});
+
+authRouter.get('/google/callback', passport.authenticate('google', { session: false }), async (req, res) => {
+        try {
+            const role = req.query.state || 'buyer';
+            const { email, fullName } = req.user;
+
+            const model = role === 'seller' ? sellerModel : buyerModel;
+
+            let existUser = await model.findOne({ email });
+
+            if (!existUser) {
+                existUser = await model.create({
+                    name: fullName,
+                    email,
+                    role,
+                    isGoogleUser: true,
+                    password: Math.random().toString(36).slice(-8) 
+                });
+            } else {
+                await model.findByIdAndUpdate(existUser._id, {
+                    name: fullName,
+                    isGoogleUser: true
+                });
+            }
+
+            const payload = { id: existUser._id, role: existUser.role };
+            const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+            res.redirect(`https://forgotten-books-project-frontend.vercel.app/Signin?token=${token}&role=${role}`);
+        } catch (error) {
+            console.error(error);
+            res.status(500).send('Internal Server Error');
+        }
+    }
+);
+
 
 module.exports = authRouter;
