@@ -6,10 +6,12 @@ const sellerRouter = require("./seller/seller.router");
 const productRouter = require("./product/product.router");
 const authRouter = require("./auth/auth.router");
 const isAuth = require("./middlewares/isAuth.middleware");
+const passport = require("./config/google.strategy")
 
 const app = express();
 app.use(cors());
 app.use(express.json()); 
+app.use(passport.initialize());
 
 const upload = require("./config/cloudinary.config");
 app.post('/upload', upload.single('image'), (req, res) => {
