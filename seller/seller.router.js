@@ -35,7 +35,8 @@ sellerRouter.get("/:id/products", async (req, res) => {
         return res.status(404).json({ message: "Seller not found" });
     }
     
-    const products = await product.find({ seller: id });
+const products = await product.find({ seller: mongoose.Types.ObjectId(id) });
+
     res.status(200).json(products);
 });
 
