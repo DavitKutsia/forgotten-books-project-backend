@@ -1,10 +1,9 @@
 const allowToCreateTheProductOnlyIfSellerIdIsThere = (req, res, next) => {
 
-    const sellerId = req.headers['seller-id'];
-    if (sellerId) {
+     if (req.user && req.user.role === "seller") {
         next();
     } else {
-        res.status(403).send('You are not allowed to post a product without a seller ID');
+        res.status(403).json({ message: "You must be a seller to create a product" });
     }
 }
 
