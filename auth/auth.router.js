@@ -88,39 +88,51 @@ authRouter.get('/google', (req, res, next) => {
     passport.authenticate('google', { scope: ['profile', 'email'], state: role, prompt: 'select_account' })(req, res, next);
 });
 
-authRouter.get('/google/callback', passport.authenticate('google', { session: false }), async (req, res) => {
-        try {
-            const role = req.query.state || 'buyer';
-            const { email, fullName } = req.user;
+authRouter.get(
+  '/google/callback',
+  passport.authenticate('google', { session: false }),
+  async (req, res) => {
+    try {
+      const { email, fullName } = req.user;
 
-            const model = role === 'seller' ? sellerModel : buyerModel;
+      let existUser =
+        (await sellerModel.findOne({ email })) ||
+        (await buyerModel.findOne({ email }));
 
-            let existUser = await model.findOne({ email });
+      let role;
 
-            if (!existUser) {
-                existUser = await model.create({
-                    name: fullName,
-                    email,
-                    role,
-                    isGoogleUser: true,
-                    password: Math.random().toString(36).slice(-8) 
-                });
-            } else {
-                await model.findByIdAndUpdate(existUser._id, {
-                    name: fullName,
-                    isGoogleUser: true
-                });
-            }
+      if (!existUser) {
+        role = 'buyer';
+        existUser = await buyerModel.create({
+          name: fullName,
+          email,
+          role,
+          isGoogleUser: true,
+          password: Math.random().toString(36).slice(-8),
+        });
+      } else {
+        role = existUser.role;
 
-            const payload = { id: existUser._id, role: existUser.role };
-            const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+        await existUser.updateOne({
+          name: fullName,
+          isGoogleUser: true,
+        });
+      }
 
-            res.redirect(`https://forgotten-books-project-frontend.vercel.app/Signin?token=${token}&role=${role}`);
-        } catch (error) {
-            console.error(error);
-            res.status(500).send('Internal Server Error');
-        }
+
+      const payload = { id: existUser._id, role };
+      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: '1h',
+      });
+
+      res.redirect(
+        `https://forgotten-books-project-frontend.vercel.app/Signin?token=${token}&role=${role}`
+      );
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Internal Server Error');
     }
+  }
 );
 
 
