@@ -55,7 +55,7 @@ authRouter.post('/login', async (req, res) => {
     const payload = { id: user._id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.status(200).json({ message: 'Login successful', token });
+    res.status(200).json({ message: 'Login successful', token, user: { id: user._id, role: user.role, email: user.email } });
 });
 
 authRouter.get('/profile', isAuth, async (req, res) => {
