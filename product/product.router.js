@@ -6,36 +6,33 @@ const allowToCreateTheProductOnlyIfSellerIdIsThere = require("../middlewares/all
 
 const productRouter = Router();
 
-productRouter.post("/", allowToCreateTheProductOnlyIfSellerIdIsThere, async (req, res) => {
+productRouter.post("/", isAuth, allowToCreateTheProductOnlyIfSellerIdIsThere, async (req, res) => {
 
-    const sellerId = req.headers["seller-id"];
+    const sellerId = req.user.id; 
 
-    if (!sellerId) {
-        return res.status(400).json({ message: "Seller ID is required" });
-    }
+  if (!isValidObjectId(sellerId)) {
+    return res.status(400).json({ message: "Invalid seller ID" });
+  }
 
-    if (!isValidObjectId(sellerId)) {
-        return res.status(400).json({ message: "Invalid seller ID" });
-    }
+  const seller = await Seller.findById(sellerId);
+  if (!seller) {
+    return res.status(404).json({ message: "Seller not found" });
+  }
 
-    const seller = await Seller.findById(sellerId);
-    if (!seller) {
-        return res.status(404).json({ message: "Seller not found" });
-    }
+  const { title, content, price } = req.body || {};
 
-    const { title, content, price } = req.body || {};
-    try {
-        const newProduct = await product.create({
-            title,
-            content,
-            price,
-            seller: sellerId,
-        });
-        
-        res.status(201).json({message: "Product created successfully", data: newProduct});
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+  try {
+    const newProduct = await product.create({
+      title,
+      content,
+      price,
+      seller: sellerId,
+    });
+
+    res.status(201).json({ message: "Product created successfully", data: newProduct });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 productRouter.get("/", async (req, res) => {
