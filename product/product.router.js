@@ -6,7 +6,7 @@ const allowToCreateTheProductOnlyIfSellerIdIsThere = require("../middlewares/all
 
 const productRouter = Router();
 
-productRouter.post("/", isAuth, allowToCreateTheProductOnlyIfSellerIdIsThere, async (req, res) => {
+productRouter.post("/", allowToCreateTheProductOnlyIfSellerIdIsThere, async (req, res) => {
 
     const sellerId = req.user.id; 
 
