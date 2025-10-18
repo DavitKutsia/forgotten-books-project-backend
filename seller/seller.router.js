@@ -32,9 +32,9 @@ sellerRouter.get("/:id/products", async (req, res) => {
         return res.status(400).json({ message: "Invalid seller ID" });
     }
 
-    const seller = await seller.findById(id);
-    if (!seller) {
-        return res.status(404).json({ message: "Seller not found" });
+const sellerDoc = await seller.findById(id);
+    if (!sellerDoc) {
+      return res.status(404).json({ message: "Seller not found" });
     }
     
 const products = await product.find({ seller: mongoose.Types.ObjectId(id) });
