@@ -13,8 +13,8 @@ const authRouter = Router();
 
 authRouter.post('/register', async (req, res) => {
     const { role, name, email, password } = req.body || {};
-    if (!role || !['seller', 'buyer'].includes(role)) {
-        return res.status(400).json({ message: 'role must be "seller" or "buyer"' });
+    if (!role || !['seller', 'buyer', 'admin'].includes(role)) {
+        return res.status(400).json({ message: 'role must be "seller", "buyer" or "admin"' });
     }
 
     const schema = role === 'seller' ? sellerSchema : buyerSchema;
@@ -31,7 +31,7 @@ authRouter.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await model.create({ name, email, password: hashedPassword });
+    await model.create({ name, email, password: hashedPassword, role });
 
     res.status(201).json({ message: `${role} registered successfully` });
 });
@@ -42,7 +42,10 @@ authRouter.post('/login', async (req, res) => {
         return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await sellerModel.findOne({ email }) || await buyerModel.findOne({ email });
+    const user =
+        await sellerModel.findOne({ email }) ||
+        await buyerModel.findOne({ email });
+
     if (!user) {
         return res.status(400).json({ message: 'Invalid email or password' });
     }
@@ -52,15 +55,30 @@ authRouter.post('/login', async (req, res) => {
         return res.status(400).json({ message: 'Invalid email or password' });
     }
 
+    if (!['buyer', 'seller', 'admin'].includes(user.role)) {
+        return res.status(403).json({ message: 'Unauthorized role' });
+    }
+
     const payload = { id: user._id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.status(200).json({ message: 'Login successful', token, user: { id: user._id, role: user.role, email: user.email } });
+    res.status(200).json({ message: 'Login successful', token });
 });
 
 authRouter.get('/profile', isAuth, async (req, res) => {
     const userId = req.user.id;
     const role = req.user.role;
+
+    if (role === 'admin') {
+        return res.status(200).json({
+            user: {
+                id: userId,
+                role: 'admin',
+                name: 'Administrator',
+                email: 'admin@forgottenbooks.com' 
+            }
+        });
+    }
 
     let user;
     if (role === 'seller') {
@@ -85,17 +103,16 @@ authRouter.get('/google', (req, res, next) => {
     req.session = req.session || {};
     req.session.role = role;
 
-    passport.authenticate('google', { 
-        scope: ['profile', 'email'], 
-        state: role, 
-        prompt: 'select_account' 
+    passport.authenticate('google', {
+        scope: ['profile', 'email'],
+        state: role,
+        prompt: 'select_account'
     })(req, res, next);
 });
 
-
 authRouter.get('/google/callback', passport.authenticate('google', { session: false }), async (req, res) => {
     try {
-        const role = decodeURIComponent(req.query.state || 'buyer');
+        const role = req.query.state || 'buyer';
         const { email, fullName } = req.user;
 
         const model = role === 'seller' ? sellerModel : buyerModel;
@@ -108,7 +125,7 @@ authRouter.get('/google/callback', passport.authenticate('google', { session: fa
                 email,
                 role,
                 isGoogleUser: true,
-                password: Math.random().toString(36).slice(-8) 
+                password: Math.random().toString(36).slice(-8)
             });
         } else {
             await model.findByIdAndUpdate(existUser._id, {
@@ -126,7 +143,5 @@ authRouter.get('/google/callback', passport.authenticate('google', { session: fa
         res.status(500).send('Internal Server Error');
     }
 });
-
-
 
 module.exports = authRouter;
