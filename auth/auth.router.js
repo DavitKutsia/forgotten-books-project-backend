@@ -63,7 +63,7 @@ authRouter.post('/login', async (req, res) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.status(200).json({ message: 'Login successful', token });
-});
+}); 
 
 authRouter.get('/profile', isAuth, async (req, res) => {
     const userId = req.user.id;
