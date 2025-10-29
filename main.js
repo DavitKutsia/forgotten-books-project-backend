@@ -14,15 +14,27 @@ const isAuth = require("./middlewares/isAuth.middleware");
 const app = express();
 
 const corsOptions = {
-  origin: "http://localhost:5173",
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "https://forgotten-books-project-frontend.vercel.app",
+    ];
+
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = "The CORS policy for this site does not allow access from the specified Origin.";
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true, 
 };
+
 app.use(cors(corsOptions));
-
 app.use(express.json());
-
 app.use(passport.initialize());
 
 app.post("/upload", upload.single("image"), (req, res) => {
