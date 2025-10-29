@@ -12,7 +12,7 @@ const isAdmin = (req, res, next) => {
     next();
 };
 
-adminRouter.get('/stats', isAuth, isAdmin, async (req, res) => {
+adminRouter.get('/stats', isAdmin, async (req, res) => {
     try {
         const totalBuyers = await buyerModel.countDocuments();
         const totalSellers = await sellerModel.countDocuments();
