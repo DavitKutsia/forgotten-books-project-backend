@@ -16,7 +16,7 @@ adminRouter.get('/stats', isAdmin, async (req, res) => {
     try {
         const totalBuyers = await buyerModel.countDocuments();
         const totalSellers = await sellerModel.countDocuments();
-
+z
         res.status(200).json({
             success: true,
             stats: {

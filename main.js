@@ -9,7 +9,7 @@ const sellerRouter = require("./seller/seller.router");
 const productRouter = require("./product/product.router");
 const authRouter = require("./auth/auth.router");
 const adminRouter = require("./admin/admin.router");
-const isAuth = require("./middlewares/isAuth.middleware");
+const stripeRouter = require("./stripe/stripe.router");
 
 const app = express();
 
@@ -40,13 +40,14 @@ app.use(passport.initialize());
 app.post("/upload", upload.single("image"), (req, res) => {
   res.json(req.file);
 });
-
+ 
 app.use("/auth", authRouter);
 
 app.use("/buyers", isAuth, buyerRouter);
 app.use("/sellers", isAuth, sellerRouter);
 app.use("/products", isAuth, productRouter);
 app.use("/admin", isAuth, adminRouter);
+app.use('/stripe', stripeRouter);
 
 app.get("/", (req, res) => {
   res.send("Hello World");
