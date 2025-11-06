@@ -3,6 +3,7 @@ const connectToDb = require("./db/db");
 const cors = require("cors");
 const passport = require("./config/google.strategy");
 const upload = require("./config/cloudinary.config");
+const isAuth = require("./middlewares/isAuth.middleware");
 
 const buyerRouter = require("./buyer/buyer.router");
 const sellerRouter = require("./seller/seller.router");
