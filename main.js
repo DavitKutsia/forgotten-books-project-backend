@@ -14,7 +14,10 @@ const stripeRouter = require("./stripe/stripe.router");
 
 const app = express();
 
-const allowedOrigins = ["http://localhost:5173"]; // your frontend URL
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://forgotten-books-project-frontend.vercel.app"
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -24,10 +27,11 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true, // if you send cookies/auth headers
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(express.json());
 app.use(passport.initialize());
@@ -35,23 +39,16 @@ app.use(passport.initialize());
 app.post("/upload", upload.single("image"), (req, res) => {
   res.json(req.file);
 });
- 
-app.use("/auth", authRouter);
 
+app.use("/auth", authRouter);
 app.use("/buyers", isAuth, buyerRouter);
 app.use("/sellers", isAuth, sellerRouter);
 app.use("/products", isAuth, productRouter);
 app.use("/admin", isAuth, adminRouter);
-app.use('/stripe', stripeRouter);
+app.use("/stripe", stripeRouter);
 
-app.get("/", (req, res) => {
-  res.send("Hello World");
-});
+app.get("/", (req, res) => res.send("Hello World"));
 
 connectToDb()
-  .then(() =>
-    app.listen(4000, () =>
-      console.log("🚀 Server running at http://localhost:4000")
-    )
-  )
+  .then(() => app.listen(4000, () => console.log("🚀 Server running at http://localhost:4000")))
   .catch((err) => console.error("DB connection failed:", err));
