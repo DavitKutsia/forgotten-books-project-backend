@@ -14,27 +14,21 @@ const stripeRouter = require("./stripe/stripe.router");
 
 const app = express();
 
+const allowedOrigins = ["http://localhost:5173"]; // your frontend URL
+
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      "http://localhost:5173",
-      "https://forgotten-books-project-frontend.vercel.app",
-    ];
-
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = "The CORS policy for this site does not allow access from the specified Origin.";
-      return callback(new Error(msg), false);
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
     }
-    return callback(null, true);
   },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, 
+  credentials: true, // if you send cookies/auth headers
 };
 
 app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(passport.initialize());
 

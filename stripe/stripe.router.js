@@ -5,43 +5,55 @@ const orderModel = require("../models/order.model");
 
 const stripeRouter = Router();
 
-// Example static product purchase (for testing)
-stripeRouter.post("/buy", async (req, res) => {
+stripeRouter.post("/buy", isAuth, async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
-          price: "price_1Rb4qwEWaHsE9wj75fpgOUsx",
+          price: "price_123",
           quantity: 1,
         },
       ],
       mode: "payment",
-      success_url: `${process.env.FRONT_END_URL}/?success=true`,
-      cancel_url: `${process.env.FRONT_END_URL}/?canceled=true`,
+      success_url: `https://forgotten-books-project-frontend.vercel.app/success?token=${req.token}`,
+      cancel_url: `https://forgotten-books-project-frontend.vercel.app/cancel?token=${req.token}`,
     });
 
     res.json({ url: session.url });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Stripe session creation failed" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Stripe session failed" });
   }
 });
+
 
 stripeRouter.post("/checkout", isAuth, async (req, res) => {
   try {
     const { productName, amount, description } = req.body;
 
+    if (!productName || !amount) {
+      return res.status(400).json({ message: "Missing product info" });
+    }
+
+    // Build product_data safely
+    const productData = {
+      name: productName,
+      images: ["https://example.com/product.png"], // optional
+    };
+
+    if (description && description.trim() !== "") {
+      productData.description = description;
+    }
+
+    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
             currency: "usd",
-            product_data: {
-              name: productName,
-              description,
-              images: ["https://example.com/hoodie.png"],
-            },
-            unit_amount: amount * 100, 
+            product_data: productData,
+            unit_amount: amount * 100, // Stripe requires cents
           },
           quantity: 1,
         },
@@ -54,16 +66,17 @@ stripeRouter.post("/checkout", isAuth, async (req, res) => {
       cancel_url: `${process.env.FRONT_END_URL}/?canceled=true`,
     });
 
+    // Save order in DB
     await orderModel.create({
-      amount,
-      user: req.userId,
       sessionId: session.id,
-      status: "pending",
+      user: req.userId,
+      amount,
+      status: "PENDING",
     });
 
     res.json({ url: session.url });
   } catch (error) {
-    console.error(error);
+    console.error("Stripe /checkout error:", error);
     res.status(500).json({ message: "Stripe checkout failed" });
   }
 });
