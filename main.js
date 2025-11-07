@@ -1,6 +1,5 @@
 const express = require("express");
 const connectToDb = require("./db/db");
-const cors = require("cors");
 const passport = require("./config/google.strategy");
 const upload = require("./config/cloudinary.config");
 const isAuth = require("./middlewares/isAuth.middleware");
@@ -19,19 +18,25 @@ const allowedOrigins = [
   "https://forgotten-books-project-frontend.vercel.app"
 ];
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-};
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With"
+  );
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200); 
+  }
+
+  next();
+});
 
 app.use(express.json());
 app.use(passport.initialize());
@@ -50,5 +55,7 @@ app.use("/stripe", stripeRouter);
 app.get("/", (req, res) => res.send("Hello World"));
 
 connectToDb()
-  .then(() => app.listen(4000, () => console.log("🚀 Server running at http://localhost:4000")))
+  .then(() =>
+    app.listen(4000, () => console.log("🚀 Server running at http://localhost:4000"))
+  )
   .catch((err) => console.error("DB connection failed:", err));
