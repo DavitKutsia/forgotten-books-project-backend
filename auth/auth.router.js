@@ -1,8 +1,6 @@
 const { Router } = require('express');
-const sellerModel = require('../models/seller.model');
-const buyerModel = require('../models/buyer.model');
-const sellerSchema = require('../validations/seller.schema');
-const buyerSchema = require('../validations/buyer.schema');
+const userModel = require('../models/user.model');
+const userSchema = require('../validations/user.schema');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const isAuth = require('../middlewares/isAuth.middleware');
@@ -13,25 +11,24 @@ const authRouter = Router();
 
 authRouter.post('/register', async (req, res) => {
     const { role, name, email, password } = req.body || {};
-    if (!role || !['seller', 'buyer', 'admin'].includes(role)) {
-        return res.status(400).json({ message: 'role must be "seller", "buyer" or "admin"' });
+
+    if (!role || !['user', 'admin'].includes(role)) {
+        return res.status(400).json({ message: 'role must be "user" or "admin"' });
     }
 
-    const schema = role === 'seller' ? sellerSchema : buyerSchema;
-    const model  = role === 'seller' ? sellerModel  : buyerModel;
-
-    const { error } = schema.validate(req.body);
+    const { error } = userSchema.validate(req.body);
     if (error) {
         return res.status(400).json({ message: error.details[0].message });
     }
 
-    const existingUser = await model.findOne({ email });
+    const existingUser = await userModel.findOne({ email });
     if (existingUser) {
-        return res.status(400).json({ message: `${role} with this email already exists` });
+        return res.status(400).json({ message: `User with this email already exists` });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await model.create({ name, email, password: hashedPassword, role });
+
+    await userModel.create({ name, email, password: hashedPassword, role });
 
     res.status(201).json({ message: `${role} registered successfully` });
 });
@@ -43,8 +40,7 @@ authRouter.post('/login', async (req, res) => {
     }
 
     const user =
-        await sellerModel.findOne({ email }) ||
-        await buyerModel.findOne({ email });
+        await userModel.findOne({ email });
 
     if (!user) {
         return res.status(400).json({ message: 'Invalid email or password' });
@@ -55,7 +51,7 @@ authRouter.post('/login', async (req, res) => {
         return res.status(400).json({ message: 'Invalid email or password' });
     }
 
-    if (!['buyer', 'seller', 'admin'].includes(user.role)) {
+    if (!['user', 'admin'].includes(user.role)) {
         return res.status(403).json({ message: 'Unauthorized role' });
     }
 
@@ -82,10 +78,8 @@ authRouter.get('/profile', isAuth, async (req, res) => {
         }
 
         let user;
-        if (role === 'seller') {
-            user = await sellerModel.findById(userId).select('-password');
-        } else if (role === 'buyer') {
-            user = await buyerModel.findById(userId).select('-password');
+        if (role === 'user') {
+            user = await userModel.findById(userId).select('-password');
         }
 
         if (!user) {
@@ -102,8 +96,8 @@ authRouter.get('/profile', isAuth, async (req, res) => {
 
 authRouter.get('/google', (req, res, next) => {
     const role = req.query.role;
-    if (!role || !['buyer', 'seller'].includes(role)) {
-        return res.status(400).json({ message: 'role query param must be "buyer" or "seller"' });
+    if (!role || !['user', 'admin'].includes(role)) {
+        return res.status(400).json({ message: 'role query param must be "user" or "admin"' });
     }
 
     req.session = req.session || {};
@@ -118,10 +112,10 @@ authRouter.get('/google', (req, res, next) => {
 
 authRouter.get('/google/callback', passport.authenticate('google', { session: false }), async (req, res) => {
     try {
-        const role = req.query.state || 'buyer';
+        const role = req.query.state || 'user';
         const { email, fullName } = req.user;
 
-        const model = role === 'seller' ? sellerModel : buyerModel;
+        const model = role === 'user' ? userModel : adminModel;
 
         let existUser = await model.findOne({ email });
 

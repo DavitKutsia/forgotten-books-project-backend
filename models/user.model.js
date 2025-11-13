@@ -1,7 +1,7 @@
 const e = require("express");
 const { default: mongoose } = require("mongoose");
 
-const buyerModel = new mongoose.Schema({
+const userModel = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -9,7 +9,6 @@ const buyerModel = new mongoose.Schema({
     email: {
         type: String,
         required: true,
-        unique: true,
     },
     password: {
         type: String,
@@ -17,9 +16,14 @@ const buyerModel = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['buyer', 'seller', 'admin'],
-        default: 'buyer'
-    }
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
+    subscriptionActive: {
+        type: Boolean,
+        default: false,
+    },
+
 }, {timestamps: true});
 
-module.exports = mongoose.model("buyer", buyerModel);
+module.exports = mongoose.model("user", userModel);

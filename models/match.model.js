@@ -6,14 +6,14 @@ const matchSchema = new mongoose.Schema({
     unique: true,
     required: true,
   },
-  productId: {
+  projectId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "product",
     required: true,
   },
   matcherUserId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "user", 
+    ref: "user",
     required: true,
   },
   createdAt: {
@@ -26,4 +26,4 @@ const matchSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("Match", matchSchema);
+module.exports = mongoose.models.Match || mongoose.model("Match", matchSchema);
