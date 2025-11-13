@@ -14,7 +14,6 @@ const stripeWebhook = require("./stripe/stripe.webhook");
 
 const app = express();
 
-<<<<<<< HEAD
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5175",
@@ -40,7 +39,7 @@ app.use((req, res, next) => {
 
   next();
 });
-=======
+
 const allowedOrigins = ["http://localhost:5173"];
 
 const corsOptions = {
@@ -54,11 +53,8 @@ const corsOptions = {
   credentials: true,
 };
 
-// Use CORS
 app.use(cors(corsOptions));
->>>>>>> 2506b12 (davaleba)
 
-// JSON parser for all routes EXCEPT Stripe webhook
 app.use((req, res, next) => {
   if (req.originalUrl === "/stripe/webhook") {
     next();
@@ -69,20 +65,17 @@ app.use((req, res, next) => {
 
 app.use(passport.initialize());
 
-// File upload
 app.post("/upload", upload.single("image"), (req, res) => {
   res.json(req.file);
 });
 
-<<<<<<< HEAD
 app.use("/auth", authRouter);
 app.use("/buyers", isAuth, buyerRouter);
 app.use("/sellers", isAuth, sellerRouter);
 app.use("/products", isAuth, productRouter);
 app.use("/admin", isAuth, adminRouter);
 app.use("/stripe", stripeRouter);
-=======
-// Routes
+
 app.use("/auth", authRouter);
 app.use("/users", isAuth, userRouter);
 app.use("/products", isAuth, productRouter);
@@ -90,13 +83,10 @@ app.use("/admin", isAuth, adminRouter);
 app.use("/stripe", stripeRouter);
 app.use("/match", matchRouter);
 
-// Stripe webhook (needs raw body)
 app.use("/stripe/webhook", stripeWebhook);
->>>>>>> 2506b12 (davaleba)
 
 app.get("/", (req, res) => res.send("Hello World"));
 
-// Connect DB and start server
 connectToDb()
   .then(() =>
     app.listen(4000, () => console.log("🚀 Server running at http://localhost:4000"))
