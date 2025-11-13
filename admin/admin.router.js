@@ -1,6 +1,5 @@
 const { Router } = require('express');
-const buyerModel = require('../models/buyer.model');
-const sellerModel = require('../models/seller.model');
+const userModel = require('../models/user.model');
 const isAuth = require('../middlewares/isAuth.middleware');
 
 const adminRouter = Router();
@@ -14,14 +13,12 @@ const isAdmin = (req, res, next) => {
 
 adminRouter.get('/stats', isAuth, isAdmin, async (req, res) => {
   try {
-    const totalBuyers = await buyerModel.countDocuments();
-    const totalSellers = await sellerModel.countDocuments();
+    const totalUsers= await userModel.countDocuments();
 
     res.status(200).json({
       success: true,
       stats: {
-        totalBuyers,
-        totalSellers,
+        totalUsers
       },
     });
   } catch (error) {
