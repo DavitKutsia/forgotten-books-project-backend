@@ -6,8 +6,6 @@ const upload = require("./config/cloudinary.config");
 const isAuth = require("./middlewares/isAuth.middleware");
 
 const userRouter = require("./user/user.router");
-const buyerRouter = require("./user/buyer.router");
-const sellerRouter = require("./user/seller.router");
 const productRouter = require("./product/product.router");
 const authRouter = require("./auth/auth.router");
 const adminRouter = require("./admin/admin.router");
@@ -52,8 +50,6 @@ app.post("/upload", upload.single("image"), (req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/users", isAuth, userRouter);
-app.use("/buyers", isAuth, buyerRouter);
-app.use("/sellers", isAuth, sellerRouter);
 app.use("/products", isAuth, productRouter);
 app.use("/admin", isAuth, adminRouter);
 app.use("/stripe", stripeRouter);
