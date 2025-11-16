@@ -4,26 +4,26 @@ const matchSchema = new mongoose.Schema({
   matchId: {
     type: String,
     unique: true,
-    required: true,
+    required: true
   },
-  projectId: {
+  productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "product",
-    required: true,
+    required: true
   },
   matcherUserId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "user",
-    required: true,
+    required: true
   },
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now
   },
   respondedByOwner: {
     type: Boolean,
-    default: false,
-  },
+    default: false
+  }
 });
 
 module.exports = mongoose.models.Match || mongoose.model("Match", matchSchema);
