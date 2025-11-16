@@ -1,29 +1,26 @@
 const mongoose = require("mongoose");
 
-const matchSchema = new mongoose.Schema({
-  matchId: {
+const productSchema = new mongoose.Schema({
+  title: {
     type: String,
-    unique: true,
     required: true,
+    minlength: 3
   },
-  productId: {
+  content: {
+    type: String,
+    required: true,
+    minlength: 10
+  },
+  price: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "product",
-    required: true,
-  },
-  matcherUserId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "user", 
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  respondedByOwner: {
-    type: Boolean,
-    default: false,
-  },
+    ref: "user",
+    required: true
+  }
 });
 
-module.exports = mongoose.model("Match", matchSchema);
+module.exports = mongoose.models.Product || mongoose.model("Product", productSchema);
