@@ -75,17 +75,31 @@ matchRouter.get("/:productId", isAuth, async (req, res) => {
 matchRouter.get("/all", isAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const products = await Product.find({ ownerId: userId });
+    const productIds = products.map(p => p._id);
+    const matches = await Match.find({ productId: { $in: productIds } })
+      .populate("matcherUserId", "username name email");
 
-    const matches = await Match.find()
-      .populate({ path: "matcherUserId", select: "name username email" })
-      .populate({ path: "productId", select: "title ownerId" });
+    const user = await User.findById(userId);
 
-    const userMatches = matches.filter(
-      (m) => String(m.productId.ownerId) === String(userId)
-    );
+    if (!user.subscriptionActive) {
+      return res.json({
+        count: matches.length,
+        message: "Upgrade your subscription to see who matched with you.",
+      });
+    }
 
-    res.json(userMatches);
+    res.json({
+      count: matches.length,
+      matches: matches.map(m => ({
+        matchId: m.matchId,
+        matcher: m.matcherUserId,
+        createdAt: m.createdAt,
+        respondedByOwner: m.respondedByOwner,
+      })),
+    });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 });
