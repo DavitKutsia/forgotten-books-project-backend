@@ -72,4 +72,29 @@ matchRouter.get("/:productId", isAuth, async (req, res) => {
   }
 });
 
+matchRouter.get("/all", isAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const matches = await Match.find()
+      .populate({
+        path: "matcherUserId",
+        select: "username email name",
+      })
+      .populate({
+        path: "productId",
+        select: "title ownerId",
+      });
+
+    const userMatches = matches.filter(
+      (m) => String(m.productId.ownerId) === String(userId)
+    );
+
+    res.json(userMatches);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 module.exports = matchRouter;
