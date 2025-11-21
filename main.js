@@ -3,6 +3,7 @@ const connectToDb = require("./db/db");
 const passport = require("./config/google.strategy");
 const upload = require("./config/cloudinary.config");
 const isAuth = require("./middlewares/isAuth.middleware");
+const cors = require("cors");
 
 const userRouter = require("./user/user.router");
 const productRouter = require("./product/product.router");
@@ -21,27 +22,7 @@ const allowedOrigins = [
   "https://forgotten-books-project-frontend.vercel.app"
 ];
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With"
-  );
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200); 
-  }
-
-  next();
-});
-
-const corsOptions = {
+app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -49,10 +30,10 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
+  methods: "GET,POST,PUT,DELETE,OPTIONS",
+  allowedHeaders: "Content-Type,Authorization,X-Requested-With",
+  credentials: true
+}));
 
 app.use((req, res, next) => {
   if (req.originalUrl === "/stripe/webhook") {
@@ -69,26 +50,19 @@ app.post("/upload", upload.single("image"), (req, res) => {
 });
 
 app.use("/auth", authRouter);
-app.use("/buyers", isAuth, buyerRouter);
-app.use("/sellers", isAuth, sellerRouter);
-app.use("/products", isAuth, productRouter);
-app.use("/admin", isAuth, adminRouter);
-app.use("/stripe", stripeRouter);
-
-app.use("/auth", authRouter);
 app.use("/users", isAuth, userRouter);
 app.use("/products", isAuth, productRouter);
 app.use("/admin", isAuth, adminRouter);
 app.use("/stripe", stripeRouter);
-app.use("/match", matchRouter);
-
 app.use("/stripe/webhook", stripeWebhook);
-
+app.use("/match", matchRouter);
 
 app.get("/", (req, res) => res.send("Hello World"));
 
 connectToDb()
   .then(() =>
-    app.listen(4000, () => console.log("🚀 Server running at http://localhost:4000"))
+    app.listen(4000, () =>
+      console.log("🚀 Server running at http://localhost:4000")
+    )
   )
   .catch((err) => console.error("DB connection failed:", err));
