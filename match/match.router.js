@@ -2,8 +2,8 @@ const { Router } = require("express");
 const { v4: uuidv4 } = require("uuid");
 const Match = require("../models/match.model");
 const Product = require("../models/product.model");
-const isAuth = require("../middlewares/isAuth.middleware");
 const User = require("../models/user.model");
+const isAuth = require("../middlewares/isAuth.middleware");
 
 const matchRouter = Router();
 
@@ -18,9 +18,7 @@ matchRouter.post("/:productId", isAuth, async (req, res) => {
     }
 
     const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found." });
-    }
+    if (!product) return res.status(404).json({ message: "Product not found." });
 
     const match = await Match.create({
       matchId: uuidv4(),
@@ -44,10 +42,12 @@ matchRouter.get("/:productId", isAuth, async (req, res) => {
 
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: "Product not found." });
-    if (String(product.user) !== String(userId))
+    if (String(product.ownerId) !== String(userId)) {
       return res.status(403).json({ message: "Not your product." });
+    }
 
-    const matches = await Match.find({ productId }).populate("matcherUserId", "username email");
+    const matches = await Match.find({ productId })
+      .populate("matcherUserId", "username name email");
 
     const user = await User.findById(userId);
 
@@ -77,14 +77,8 @@ matchRouter.get("/all", isAuth, async (req, res) => {
     const userId = req.user.id;
 
     const matches = await Match.find()
-      .populate({
-        path: "matcherUserId",
-        select: "username email name",
-      })
-      .populate({
-        path: "productId",
-        select: "title ownerId",
-      });
+      .populate({ path: "matcherUserId", select: "name username email" })
+      .populate({ path: "productId", select: "title ownerId" });
 
     const userMatches = matches.filter(
       (m) => String(m.productId.ownerId) === String(userId)
@@ -96,5 +90,5 @@ matchRouter.get("/all", isAuth, async (req, res) => {
   }
 });
 
-
 module.exports = matchRouter;
+
