@@ -19,13 +19,12 @@ productRouter.post("/", allowToCreateTheProductOnlyIfSellerIdIsThere, async (req
     return res.status(404).json({ message: "User not found" });
   }
 
-  const { title, content, price } = req.body || {};
+  const { title, content } = req.body || {};
 
   try {
     const newProduct = await product.create({
       title,
       content,
-      price,
       user: userId,
     });
 
