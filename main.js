@@ -10,8 +10,8 @@ const productRouter = require("./product/product.router");
 const authRouter = require("./auth/auth.router");
 const adminRouter = require("./admin/admin.router");
 const stripeRouter = require("./stripe/stripe.router");
-const matchRouter = require("./match/match.router");
 const stripeWebhook = require("./stripe/stripe.webhook");
+const matchRouter = require("./match/match.router");
 
 const app = express();
 
@@ -22,18 +22,20 @@ const allowedOrigins = [
   "https://forgotten-books-project-frontend.vercel.app"
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: "GET,POST,PUT,DELETE,OPTIONS",
-  allowedHeaders: "Content-Type,Authorization,X-Requested-With",
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: "GET,POST,PUT,DELETE,OPTIONS",
+    allowedHeaders: "Content-Type,Authorization,X-Requested-With",
+    credentials: true,
+  })
+);
 
 app.use((req, res, next) => {
   if (req.originalUrl === "/stripe/webhook") {
@@ -49,12 +51,12 @@ app.post("/upload", upload.single("image"), (req, res) => {
   res.json(req.file);
 });
 
+app.use("/stripe/webhook", stripeWebhook);
 app.use("/auth", authRouter);
 app.use("/users", isAuth, userRouter);
 app.use("/products", isAuth, productRouter);
 app.use("/admin", isAuth, adminRouter);
 app.use("/stripe", stripeRouter);
-app.use("/stripe/webhook", stripeWebhook);
 app.use("/match", matchRouter);
 
 app.get("/", (req, res) => res.send("Hello World"));
