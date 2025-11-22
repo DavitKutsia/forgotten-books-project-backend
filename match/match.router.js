@@ -28,7 +28,7 @@ matchRouter.get("/:productId", isAuth, async (req, res) => {
     const userId = req.user.id;
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: "Product not found." });
-    if (String(product.userId) !== String(userId)) {
+    if (String(product.user) !== String(userId)) {
       return res.status(403).json({ message: "Not your product." });
     }
     const matches = await Match.find({ productId })
