@@ -10,8 +10,7 @@ router.post("/buy", isAuth, async (req, res) => {
     const priceId = "price_123";
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      customer_email: req.user.email, 
+      payment_method_types: ["card"], 
       mode: "payment",
       customer_email: req.user.email,
       line_items: [
