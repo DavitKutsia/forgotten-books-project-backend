@@ -16,7 +16,8 @@ const matchRouter = require("./match/match.router");
 const app = express();
 
 const allowedOrigins = [
-  "http://localhost:5173",
+  "http://localhost:5174",
+  
   "http://localhost:5175",
   "http://localhost:5176",
   "https://forgotten-books-project-frontend.vercel.app"

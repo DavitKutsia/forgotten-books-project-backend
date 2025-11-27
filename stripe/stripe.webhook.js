@@ -34,7 +34,8 @@ router.post(
 
           const order = await Order.findOne({ sessionId: session.id });
           if (order) {
-            order.status = "SUCCESS";
+            order.status = session.payment_status === "paid" ? "SUCCESS" : "REJECT";
+            order.paymentIntentId = session.payment_intent;
             await order.save();
           }
           break;
@@ -42,8 +43,8 @@ router.post(
 
         case "payment_intent.payment_failed": {
           const intent = event.data.object;
-          const order = await Order.findOne({ sessionId: intent.id });
-          if (order) {
+          const order = await Order.findOne({ paymentIntentId: intent.id });
+          if (order) {  
             order.status = "REJECT";
             await order.save();
           }
@@ -52,7 +53,7 @@ router.post(
 
         case "payment_intent.processing": {
           const intent = event.data.object;
-          const order = await Order.findOne({ sessionId: intent.id });
+          const order = await Order.findOne({ paymentIntentId: intent.id });
           if (order) {
             order.status = "PENDING";
             await order.save();
@@ -72,4 +73,3 @@ router.post(
 );
 
 module.exports = router;
-
