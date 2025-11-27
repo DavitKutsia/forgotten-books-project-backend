@@ -12,7 +12,7 @@ matchRouter.get("/all", isAuth, async (req, res) => {
     const userId = req.user.id;
     const matches = await Match.find()
       .populate({ path: "matcherUserId", select: "name username email" })
-      .populate({ path: "productId", select: "title ownerId" });
+      .populate({ path: "productId", select: "title user" });
     const userMatches = matches.filter(
       (m) => String(m.productId.ownerId) === String(userId)
     );
