@@ -22,27 +22,26 @@ const allowedOrigins = [
   "https://forgotten-books-project-frontend.vercel.app"
 ];
 
+app.use("/stripe/webhook", stripeWebhook);
+
+app.options("*", cors());
+
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
       }
     },
-    methods: "GET,POST,PUT,DELETE,OPTIONS",
-    allowedHeaders: "Content-Type,Authorization,X-Requested-With",
     credentials: true,
   })
 );
 
 app.use((req, res, next) => {
-  if (req.originalUrl === "/stripe/webhook") {
-    next();
-  } else {
-    express.json()(req, res, next);
-  }
+  if (req.originalUrl === "/stripe/webhook") return next();
+  express.json()(req, res, next);
 });
 
 app.use(passport.initialize());
@@ -51,7 +50,6 @@ app.post("/upload", upload.single("image"), (req, res) => {
   res.json(req.file);
 });
 
-app.use("/stripe/webhook", stripeWebhook);
 app.use("/auth", authRouter);
 app.use("/users", isAuth, userRouter);
 app.use("/products", isAuth, productRouter);
