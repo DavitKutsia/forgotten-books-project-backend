@@ -9,8 +9,9 @@ const matchRouter = Router();
 
 matchRouter.get("/all", isAuth, async (req, res) => {
   try {
-    const userId = req.user.id;
+    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
 
+    const userId = req.user.id;
     const matches = await Match.find()
       .populate({ path: "matcherUserId", select: "name username email" })
       .populate({ path: "productId", select: "title user" });
@@ -25,6 +26,7 @@ matchRouter.get("/all", isAuth, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 matchRouter.get("/:productId", isAuth, async (req, res) => {
   try {
