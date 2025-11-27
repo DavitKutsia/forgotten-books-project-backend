@@ -24,7 +24,7 @@ const allowedOrigins = [
 
 app.use("/stripe/webhook", stripeWebhook);
 
-app.options("*", cors());
+app.use(cors());
 
 app.use(
   cors({
