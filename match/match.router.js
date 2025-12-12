@@ -97,4 +97,17 @@ matchRouter.post("/:productId", isAuth, async (req, res) => {
   }
 });
 
+matchRouter.get("/user/matches", isAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const matches = await Match.find({ matcherUserId: userId }).select("productId matcherUserId createdAt");
+
+    res.json(matches);
+  } catch (err) {
+    console.error("MATCH /user/matches error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = matchRouter;
