@@ -14,7 +14,8 @@ matchRouter.get("/all", isAuth, async (req, res) => {
 
     const matches = await Match.find()
       .populate({ path: "matcherUserId", select: "name username email" })
-      .populate({ path: "productId", select: "title user" });
+      .populate({ path: "productId", select: "title user" })
+      .populate({ path: "matchedProduct", select: "title content description price tags user" });
 
     const userMatches = matches.filter(
       (m) => m.productId && String(m.productId.user) === String(userId)
@@ -26,7 +27,6 @@ matchRouter.get("/all", isAuth, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
 
 matchRouter.get("/:productId", isAuth, async (req, res) => {
   try {
@@ -42,7 +42,8 @@ matchRouter.get("/:productId", isAuth, async (req, res) => {
     }
 
     const matches = await Match.find({ productId })
-      .populate("matcherUserId", "username name email");
+      .populate("matcherUserId", "username name email")
+      .populate("matchedProduct");
 
     const user = await User.findById(userId);
 
@@ -53,14 +54,29 @@ matchRouter.get("/:productId", isAuth, async (req, res) => {
       });
     }
 
+    // Check for mutual matches
+    const enrichedMatches = await Promise.all(
+      matches.map(async (match) => {
+        // Check if you've also matched back with their product
+        const mutualMatch = await Match.findOne({
+          matcherUserId: userId,
+          productId: match.matchedProduct?._id
+        });
+
+        return {
+          matchId: match.matchId,
+          matcher: match.matcherUserId,
+          matchedProduct: match.matchedProduct,
+          createdAt: match.createdAt,
+          respondedByOwner: match.respondedByOwner || !!mutualMatch,
+          isMutual: !!mutualMatch
+        };
+      })
+    );
+
     res.json({
-      count: matches.length,
-      matches: matches.map((m) => ({
-        matchId: m.matchId,
-        matcher: m.matcherUserId,
-        createdAt: m.createdAt,
-        respondedByOwner: m.respondedByOwner,
-      })),
+      count: enrichedMatches.length,
+      matches: enrichedMatches
     });
   } catch (err) {
     console.error(err);
@@ -81,10 +97,17 @@ matchRouter.post("/:productId", isAuth, async (req, res) => {
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: "Product not found." });
 
+    // Get the matcher's product
+    const matcherProduct = await Product.findOne({ user: matcherUserId });
+    if (!matcherProduct) {
+      return res.status(400).json({ message: "You must have a product to match with others." });
+    }
+
     const match = await Match.create({
       matchId: uuidv4(),
       productId,
       matcherUserId,
+      matchedProduct: matcherProduct._id
     });
 
     res.status(201).json({
@@ -93,6 +116,19 @@ matchRouter.post("/:productId", isAuth, async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+matchRouter.get("/user/matches", isAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const matches = await Match.find({ matcherUserId: userId }).select("productId matcherUserId createdAt");
+
+    res.json(matches);
+  } catch (err) {
+    console.error("MATCH /user/matches error:", err);
     res.status(500).json({ message: err.message });
   }
 });
