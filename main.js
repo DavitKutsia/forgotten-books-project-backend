@@ -141,10 +141,11 @@ app.get("/health", (_, res) =>
   res.status(200).send("ok")
 );
 
+// Start server first (must respond to health checks)
 const PORT = process.env.PORT || 4000;
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(Server running on port ${PORT});
+  console.log(`Server running on port ${PORT}`);
 });
 
 // Then connect DB (retry or exit)
@@ -154,3 +155,4 @@ connectToDb()
     console.error("DB connection failed:", err);
     // optional: process.exit(1);
   });
+
