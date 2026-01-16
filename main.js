@@ -137,10 +137,20 @@ io.on("connection", (socket) => {
   });
 });
 
-// Start server
+app.get("/health", (_, res) => 
+  res.status(200).send("ok")
+);
+
 const PORT = process.env.PORT || 4000;
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(Server running on port ${PORT});
+});
+
+// Then connect DB (retry or exit)
 connectToDb()
-  .then(() => {
-    server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch((err) => console.error("DB connection failed:", err));
+  .then(() => console.log("DB connected"))
+  .catch((err) => {
+    console.error("DB connection failed:", err);
+    // optional: process.exit(1);
+  });
