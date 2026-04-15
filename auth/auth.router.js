@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const userModel = require("../models/user.model");
-const userSchema = require("../validations/user.schema");
+const { createUserSchema } = require("../validations/user.schema");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const isAuth = require("../middlewares/isAuth.middleware");
