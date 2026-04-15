@@ -9,129 +9,74 @@ require("dotenv").config();
 
 const authRouter = Router();
 
-const buildTokenCookie = (token) => {
-  const isProduction = process.env.NODE_ENV === "production";
-
-  return [
-    `token=${encodeURIComponent(token)}`,
-    "HttpOnly",
-    "Path=/",
-    "Max-Age=3600",
-    isProduction ? "SameSite=None" : "SameSite=Lax",
-    isProduction ? "Secure" : "",
-  ]
-    .filter(Boolean)
-    .join("; ");
-};
-
 authRouter.post("/register", async (req, res) => {
-  try {
-    const { role, name, email, password } = req.body || {};
+  const { role, name, email, password } = req.body || {};
 
-    if (!role || !["user", "admin"].includes(role)) {
-      return res.status(400).json({ message: 'role must be "user" or "admin"' });
-    }
-
-    const { error } = userSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
-    }
-
-    const existingUser = await userModel.findOne({ email });
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "User with this email already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = await userModel.create({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-    });
-
-    return res.status(201).json({
-      message: `${role} registered successfully`,
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        subscriptionActive: newUser.subscriptionActive,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({ message: "Internal server error" });
+  if (!role || !["user", "admin"].includes(role)) {
+    return res.status(400).json({ message: 'role must be "user" or "admin"' });
   }
+
+  const { error } = userSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
+  const existingUser = await userModel.findOne({ email });
+  if (existingUser) {
+    return res
+      .status(400)
+      .json({ message: "User with this email already exists" });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const newUser = await userModel.create({
+    name,
+    email,
+    password: hashedPassword,
+    role,
+  });
+
+  res.status(201).json({
+    message: `${role} registered successfully`,
+    user: {
+      id: newUser._id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      subscriptionActive: newUser.subscriptionActive,
+    },
+  });
 });
 
 authRouter.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body || {};
-
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and password are required" });
-    }
-
-    const user = await userModel.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-
-    if (!["user", "admin"].includes(user.role)) {
-      return res.status(403).json({ message: "Unauthorized role" });
-    }
-
-    const payload = { id: user._id, role: user.role };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    res.setHeader("Set-Cookie", buildTokenCookie(token));
-
-    return res.status(200).json({
-      message: "Login successful",
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        subscriptionActive: user.subscriptionActive,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({ message: "Internal server error" });
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ message: "Email and password are required" });
   }
-});
 
-authRouter.post("/logout", (req, res) => {
-  const isProduction = process.env.NODE_ENV === "production";
+  const user = await userModel.findOne({ email });
+  if (!user) {
+    return res.status(400).json({ message: "Invalid email or password" });
+  }
 
-  const clearCookie = [
-    "token=",
-    "HttpOnly",
-    "Path=/",
-    "Max-Age=0",
-    isProduction ? "SameSite=None" : "SameSite=Lax",
-    isProduction ? "Secure" : "",
-  ]
-    .filter(Boolean)
-    .join("; ");
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    return res.status(400).json({ message: "Invalid email or password" });
+  }
 
-  res.setHeader("Set-Cookie", clearCookie);
+  if (!["user", "admin"].includes(user.role)) {
+    return res.status(403).json({ message: "Unauthorized role" });
+  }
 
-  return res.status(200).json({ message: "Logged out successfully" });
+  const payload = { id: user._id, role: user.role };
+  const token = jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: "1h",
+  });
+
+  res.status(200).json({ message: "Login successful", token });
 });
 
 authRouter.get("/profile", isAuth, async (req, res) => {
@@ -143,15 +88,14 @@ authRouter.get("/profile", isAuth, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    return res.status(200).json({ user });
+    res.status(200).json({ user });
   } catch (error) {
-    return res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 authRouter.get("/google", (req, res, next) => {
   const role = req.query.role;
-
   if (!role || !["user", "admin"].includes(role)) {
     return res
       .status(400)
@@ -198,15 +142,14 @@ authRouter.get(
         expiresIn: "1h",
       });
 
-      res.setHeader("Set-Cookie", buildTokenCookie(token));
-
-      return res.redirect(
-        `https://forgotten-books-project-frontend.vercel.app/Signin?role=${role}`
+      res.redirect(
+        `https://forgotten-books-project-frontend.vercel.app/Signin?token=${token}&role=${role}`
       );
     } catch (error) {
-      return res.status(500).send("Internal Server Error");
+      res.status(500).send("Internal Server Error");
     }
   }
 );
 
 module.exports = authRouter;
+
